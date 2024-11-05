@@ -1,1 +1,171 @@
+<!doctype html>
+<html>
+<head>
+<title>Assignment 1 HeJianChi</title>
+<style>
+   :root {
+    --main-color: #000000; 
+    --main-text-color: #0a0909; 
+    --secondary-color: #2078c5; 
+    --background-color: #73b4c5; 
+    --search-box-width: 300px; 
+}
 
+body {
+    text-align: center; 
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--main-text-color);
+    line-height: 1.6;
+    padding: 20px;
+}
+
+h2 {
+    font-size: 2em;
+    text-shadow: 2px 2px 4px #aaa;
+    background-image: linear-gradient(to right, var(--main-color), var(--secondary-color));
+    color: transparent;
+}
+
+h4, th {
+    color: var(--main-color); 
+}
+
+a {
+    color: var(--main-color);
+}
+
+th {
+    background-color: var(--secondary-color);
+}
+
+tr:nth-child(even) {
+    background-color: #addbe4; 
+}
+
+h2:hover {
+    color: var(--secondary-color);
+}
+table {
+    border-radius: 8px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+    margin: auto; 
+    width: 90%; 
+    max-width: 600px; 
+    background: white;
+}
+
+th, td {
+    border: none; 
+    transition: background-color 0.3s ease;
+}
+
+tr {
+    border-bottom: 1px solid #ccc; 
+}
+
+tr:last-child {
+    border-bottom: none; 
+}
+
+tr:hover {
+    background-color: #e0e0e0;
+}
+
+button {
+    background: linear-gradient(to right, var(--main-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+button:hover {
+    transform: scale(1.1);
+}
+h2, h4, button, input[type="text"] {
+    transition: all 0.3s ease;
+}
+input[type="text"] {
+    background: linear-gradient(to right, var(--main-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 8px;
+    margin: 10px;
+    border-radius: 4px;
+    width: var(--search-box-width); 
+    box-sizing: border-box; 
+    transition: transform 0.3s ease;
+}
+
+input[type="text"]:focus {
+    transform: scale(1.05);
+}
+</style>
+</head>
+<body>
+
+<h2>Singapore 2-hr weather forecast by HeJianChi</h2>
+<input type="text" id="searchBox" placeholder="Search for an area...">
+<h4 id="timestring">Loading...</h4>
+<table id="weatherTable">
+    <tr>
+        <th>Area</th>
+        <th>Forecast</th>
+    </tr>
+</table>
+
+<script>
+fetch('https://api-open.data.gov.sg/v2/real-time/api/two-hr-forecast')
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(responsedata => {
+    let currentTimestamp = Math.floor(Date.now() / 1000); 
+
+    const options = { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    let lastUpdated = new Date(currentTimestamp * 1000).toLocaleString('en-SG', options);
+    let validUntil = new Date(currentTimestamp * 1000 + 2 * 60 * 60 * 1000).toLocaleString('en-SG', options);
+
+    document.getElementById('timestring').textContent = `Last updated at: ${lastUpdated}, Valid until: ${validUntil}`;
+
+    let forecasts = responsedata.data.items[0].forecasts;
+    let table = document.getElementById('weatherTable');
+    let searchBox = document.getElementById('searchBox');
+    let filteredForecasts = forecasts;
+
+    function filterForecasts(searchTerm) {
+      let filtered = filteredForecasts.filter(forecast => forecast.area.toLowerCase().includes(searchTerm.toLowerCase()));
+      table.innerHTML = `
+        <tr>
+            <th>Area</th>
+            <th>Forecast</th>
+        </tr>
+      `;
+      filtered.forEach(forecast => {
+        let row = table.insertRow();
+        let areaCell = row.insertCell(0);
+        areaCell.textContent = forecast.area;
+        let forecastCell = row.insertCell(1);
+        forecastCell.textContent = forecast.forecast;
+      });
+    }
+
+    searchBox.addEventListener('input', function() {
+      filterForecasts(this.value);
+    });
+
+    filterForecasts(''); // Initial call to populate the table
+  })
+  .catch(error => {
+    document.getElementById('timestring').textContent = 'Error loading data: ' + error.message;
+    console.error('Error fetching data: ', error);
+  });
+</script>
+</body>
+</html>
